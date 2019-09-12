@@ -13,5 +13,5 @@ func main() {
 	router.Register("/pull", service.PullImage)
 	router.Register("/remove", service.RemoveImage)
 
-	router.Start(5000)
+	router.Start(6000)
 }
