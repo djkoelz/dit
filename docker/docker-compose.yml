@@ -1,0 +1,16 @@
+version: "2.3"
+services:
+  dit-service:
+    container_name: dit-service
+    image: dit-service
+    network_mode: host
+    privileged: true
+    build:
+      network: host
+      context: ../
+      dockerfile: docker/Dockerfile
+      args:
+        http_proxy: http://proxy.cat.com:80
+        https_proxy: http://proxy.cat.com:80
+        no_proxy: 
+        socks_proxy:
