@@ -1,8 +1,6 @@
 package service
 
 import (
-	//"bytes"
-	//"encoding/json"
 	"github.com/djkoelz/dit/pkg/image"
 	"io"
 	"io/ioutil"
@@ -124,9 +122,8 @@ func PullImage(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			log.Print(buf)
+			w.WriteHeader(http.StatusOK)
 			w.Write(buf.Bytes())
-			//json.NewEncoder(w).Encode(image)
 		}
 	}
 }

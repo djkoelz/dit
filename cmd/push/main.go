@@ -3,7 +3,8 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	//"io/ioutil"
+	"github.com/djkoelz/dit/pkg/image"
 	"log"
 	"mime/multipart"
 	"net/http"
@@ -11,24 +12,14 @@ import (
 )
 
 // Creates a new file push http request with optional extra params
-func push(uri string, params map[string]string, paramName, imageName, path string) (*http.Request, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	fileContents, err := ioutil.ReadAll(file)
-	if err != nil {
-		return nil, err
-	}
-	file.Close()
-
+func push(uri string, params map[string]string, image bytes.Buffer) (*http.Request, error) {
 	body := new(bytes.Buffer)
 	writer := multipart.NewWriter(body)
-	part, err := writer.CreateFormFile(paramName, imageName)
+	part, err := writer.CreateFormFile("file", params["title"])
 	if err != nil {
 		return nil, err
 	}
-	part.Write(fileContents)
+	part.Write(image.Bytes())
 
 	for key, val := range params {
 		_ = writer.WriteField(key, val)
@@ -44,10 +35,23 @@ func push(uri string, params map[string]string, paramName, imageName, path strin
 }
 
 func main() {
-	extraParams := map[string]string{
-		"title": "hello-world",
+	args := os.Args
+
+	repoLocation := args[1]
+	imageName := args[2]
+	url := fmt.Sprintf("http://%s:5000/push", repoLocation)
+
+	// get the image data
+	buf, err := image.Pull(imageName)
+	if err != nil {
+		log.Fatal(err)
 	}
-	request, err := push("http://localhost:5000/load", extraParams, "file", "hello-world", "/tmp/image.tar")
+
+	params := map[string]string{
+		"title": imageName,
+	}
+
+	request, err := push(url, params, buf)
 	if err != nil {
 		log.Fatal(err)
 	}

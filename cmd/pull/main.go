@@ -3,9 +3,11 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"mime/multipart"
 	"net/http"
+	"os"
 )
 
 func pull(uri string, params map[string]string) (*http.Request, error) {
@@ -26,8 +28,11 @@ func pull(uri string, params map[string]string) (*http.Request, error) {
 }
 
 func main() {
+	args := os.Args
+	imageName := args[1]
+
 	params := map[string]string{
-		"image": "hello-world",
+		"image": imageName,
 	}
 	request, err := pull("http://localhost:5000/pull", params)
 	if err != nil {
@@ -40,10 +45,12 @@ func main() {
 	}
 
 	fmt.Println(resp)
-	var bodyContent []byte
-	//fmt.Println(resp.StatusCode)
-	//fmt.Println(resp.Header)
-	resp.Body.Read(bodyContent)
-	resp.Body.Close()
-	fmt.Println(bodyContent)
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println(body)
 }

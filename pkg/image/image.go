@@ -16,15 +16,6 @@ func Push(image []byte) error {
 	return client.LoadImage(opts)
 }
 
-func Remove(imageName string) error {
-	client, err := docker.NewClientFromEnv()
-	if err != nil {
-		return err
-	}
-
-	return client.RemoveImage(imageName)
-}
-
 func Pull(imageName string) (bytes.Buffer, error) {
 	var buf bytes.Buffer
 	client, err := docker.NewClientFromEnv()
@@ -36,4 +27,13 @@ func Pull(imageName string) (bytes.Buffer, error) {
 	err = client.ExportImage(opts)
 
 	return buf, err
+}
+
+func Remove(imageName string) error {
+	client, err := docker.NewClientFromEnv()
+	if err != nil {
+		return err
+	}
+
+	return client.RemoveImage(imageName)
 }
