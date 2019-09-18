@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-func PushImage(w http.ResponseWriter, r *http.Request) {
+func AddImage(w http.ResponseWriter, r *http.Request) {
 	mediaType, params, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
 	if err != nil {
 		log.Print(err)
@@ -41,6 +41,7 @@ func PushImage(w http.ResponseWriter, r *http.Request) {
 				log.Printf("Loading %s", p.FileName())
 
 				err = image.Push(slurp)
+				//err = image.ToDockerImage(slurp)
 				if err != nil {
 					log.Print(err)
 					w.WriteHeader(http.StatusInternalServerError)
@@ -90,7 +91,7 @@ func RemoveImage(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func PullImage(w http.ResponseWriter, r *http.Request) {
+func GetImage(w http.ResponseWriter, r *http.Request) {
 	mediaType, params, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
 	if err != nil {
 		log.Print(err)

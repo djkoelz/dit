@@ -10,8 +10,8 @@ services:
       context: ../
       dockerfile: docker/Dockerfile
       args:
-        http_proxy: 
-        https_proxy: 
+        http_proxy: http://proxy.cat.com:80
+        https_proxy: http://proxy.cat.com:80
         no_proxy: 
         socks_proxy:
   registry:

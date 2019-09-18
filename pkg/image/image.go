@@ -2,38 +2,47 @@ package image
 
 import (
 	"bytes"
-	docker "github.com/fsouza/go-dockerclient"
+	"context"
+	"github.com/docker/docker/api/types"
+	docker "github.com/docker/docker/client"
 )
 
 func Push(image []byte) error {
-	client, err := docker.NewClientFromEnv()
+	client, err := docker.NewClientWithOpts(docker.WithVersion("1.39"))
 	if err != nil {
 		return err
 	}
 
 	stream := bytes.NewBuffer(image)
-	opts := docker.LoadImageOptions{InputStream: stream}
-	return client.LoadImage(opts)
+	_, err = client.ImageLoad(context.Background(), stream, false)
+	return err
 }
 
 func Pull(imageName string) (bytes.Buffer, error) {
 	var buf bytes.Buffer
-	client, err := docker.NewClientFromEnv()
+	client, err := docker.NewClientWithOpts(docker.FromEnv, docker.WithAPIVersionNegotiation())
 	if err != nil {
 		return buf, err
 	}
 
-	opts := docker.ExportImageOptions{Name: imageName, OutputStream: &buf}
-	err = client.ExportImage(opts)
+	reader, err := client.ImagePull(context.Background(), imageName, types.ImagePullOptions{})
+	if err != nil {
+		return buf, err
+	}
+
+	buf.ReadFrom(reader)
 
 	return buf, err
 }
 
 func Remove(imageName string) error {
-	client, err := docker.NewClientFromEnv()
+	client, err := docker.NewClientWithOpts(docker.WithVersion("1.39"))
 	if err != nil {
 		return err
 	}
 
-	return client.RemoveImage(imageName)
+	opts := types.ImageRemoveOptions{Force: true}
+	_, err = client.ImageRemove(context.Background(), imageName, opts)
+
+	return err
 }

@@ -34,7 +34,7 @@ func main() {
 	params := map[string]string{
 		"image": imageName,
 	}
-	request, err := pull("http://localhost:5000/pull", params)
+	request, err := pull("http://localhost:6000/pull", params)
 	if err != nil {
 		log.Fatal(err)
 	}

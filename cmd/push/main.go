@@ -2,9 +2,12 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
-	//"io/ioutil"
 	"github.com/djkoelz/dit/pkg/image"
+	//docker "github.com/docker/docker/client"
+	docker "github.com/docker/docker/image"
+	//docker "github.com/fsouza/go-dockerclient"
 	"log"
 	"mime/multipart"
 	"net/http"
@@ -19,6 +22,7 @@ func push(uri string, params map[string]string, image bytes.Buffer) (*http.Reque
 	if err != nil {
 		return nil, err
 	}
+
 	part.Write(image.Bytes())
 
 	for key, val := range params {
@@ -39,7 +43,7 @@ func main() {
 
 	repoLocation := args[1]
 	imageName := args[2]
-	url := fmt.Sprintf("http://%s:5000/push", repoLocation)
+	url := fmt.Sprintf("http://%s:6000/push", repoLocation)
 
 	// get the image data
 	buf, err := image.Pull(imageName)
@@ -55,6 +59,13 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	var dimage docker.Image
+	if err := json.NewDecoder(request.Body).Decode(&dimage); err != nil {
+		log.Print(err)
+	}
+	fmt.Println(dimage)
+
 	client := &http.Client{}
 	resp, err := client.Do(request)
 	if err != nil {
