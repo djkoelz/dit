@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"bytes"
 	"context"
 	"github.com/docker/docker/api/types"
 	docker "github.com/docker/docker/client"
@@ -22,6 +23,16 @@ func NewStore(registry string) *Store {
 
 func (this *Store) AddImage(image *Image) {
 	this.images[image.Meta.ID] = image
+	client, err := docker.NewClientWithOpts(docker.FromEnv, docker.WithAPIVersionNegotiation())
+	if err != nil {
+		log.Print(err)
+	}
+
+	r := bytes.NewReader(image.Data)
+	_, err = client.ImageLoad(context.Background(), r, false)
+	if err != nil {
+		log.Print(err)
+	}
 }
 
 func (this *Store) RemoveImage(id string) {
@@ -49,8 +60,7 @@ func (this *Store) Sync() {
 
 		// push the registry
 		log.Printf("Pushing %s to %s", registryImageName, this.registry)
-		_, err := client.ImagePush(ctx, registryImageName,
-			types.ImagePushOptions{All: true, RegistryAuth: "0"})
+		_, err := client.ImagePush(ctx, registryImageName, types.ImagePushOptions{All: true, RegistryAuth: "0"})
 		if err != nil {
 			log.Print(err)
 		} else {
