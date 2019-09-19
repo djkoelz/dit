@@ -23,7 +23,6 @@ func NewService(store *Store) *Service {
 }
 
 func (this *Service) AddImage(w http.ResponseWriter, r *http.Request) {
-	log.Print("In addimage")
 	// var u User
 	var image Image
 	if r.Body == nil {

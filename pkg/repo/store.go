@@ -5,7 +5,9 @@ import (
 	"context"
 	"github.com/docker/docker/api/types"
 	docker "github.com/docker/docker/client"
+	"io"
 	"log"
+	"os"
 )
 
 type Store struct {
@@ -23,15 +25,19 @@ func NewStore(registry string) *Store {
 
 func (this *Store) AddImage(image *Image) {
 	this.images[image.Meta.ID] = image
+
 	client, err := docker.NewClientWithOpts(docker.FromEnv, docker.WithAPIVersionNegotiation())
 	if err != nil {
 		log.Print(err)
 	}
 
 	r := bytes.NewReader(image.Data)
-	_, err = client.ImageLoad(context.Background(), r, false)
+	resp, err := client.ImageLoad(context.Background(), r, true)
+	defer resp.Body.Close()
 	if err != nil {
 		log.Print(err)
+	} else {
+		io.Copy(os.Stdout, resp.Body)
 	}
 }
 

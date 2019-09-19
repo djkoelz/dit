@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"github.com/djkoelz/dit/pkg/repo"
 	docker "github.com/docker/docker/client"
+	dockerF "github.com/fsouza/go-dockerclient"
 	"github.com/urfave/cli"
 	"io"
 	"log"
@@ -107,8 +108,22 @@ func addImage(imageName string) error {
 		log.Fatal(err)
 	}
 
-	img, buffer, err := client.ImageInspectWithRaw(context.Background(), imageName)
-	image := repo.NewImage(buffer, img)
+	img, _, err := client.ImageInspectWithRaw(context.Background(), imageName)
+
+	// extract tar representation of the image
+	var buf bytes.Buffer
+	clientF, err := dockerF.NewClientFromEnv()
+	if err != nil {
+		return err
+	}
+
+	opts := dockerF.ExportImageOptions{Name: imageName, OutputStream: &buf}
+	err = clientF.ExportImage(opts)
+	if err != nil {
+		return err
+	}
+
+	image := repo.NewImage(buf.Bytes(), img)
 
 	log.Print(image.Meta)
 
