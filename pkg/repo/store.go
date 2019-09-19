@@ -75,6 +75,19 @@ func (this *Store) Sync() {
 	}
 }
 
+func (this *Store) CreateImagesString() string {
+	msg := "{ "
+	for _, img := range this.images {
+		msg += "[ "
+		for _, tag := range img.Meta.RepoTags {
+			msg += tag + " "
+		}
+		msg += "] "
+	}
+	msg += "}\n"
+	return msg
+}
+
 func (this *Store) PrintImages() {
 	for _, img := range this.images {
 		log.Print(img.Meta.RepoTags)

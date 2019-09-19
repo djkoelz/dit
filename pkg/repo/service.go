@@ -41,7 +41,8 @@ func (this *Service) AddImage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (this *Service) ListImages(w http.ResponseWriter, r *http.Request) {
-	this.store.PrintImages()
+	io.WriteString(w, this.store.CreateImagesString())
+	w.WriteHeader(http.StatusOK)
 }
 
 func (this *Service) RemoveImage(w http.ResponseWriter, r *http.Request) {

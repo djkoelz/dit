@@ -24,7 +24,6 @@ func main() {
 			Usage:   "Add an image to the store",
 			Action: func(c *cli.Context) error {
 				imageName := c.Args().First()
-				log.Print("Adding image ", imageName)
 				addImage(imageName)
 				return nil
 			},
@@ -35,7 +34,6 @@ func main() {
 			Usage:   "Remove an image from the store",
 			Action: func(c *cli.Context) error {
 				imageName := c.Args().First()
-				log.Print("Removing image ", imageName)
 				removeImage(imageName)
 				return nil
 			},
@@ -45,7 +43,6 @@ func main() {
 			Aliases: []string{"l"},
 			Usage:   "List all images in the store",
 			Action: func(c *cli.Context) error {
-				log.Print("Lising images")
 				listImages()
 				return nil
 			},
@@ -55,7 +52,6 @@ func main() {
 			Aliases: []string{"l"},
 			Usage:   "Sync all images in the store with active ecr",
 			Action: func(c *cli.Context) error {
-				log.Print("Syncing images")
 				syncImages()
 				return nil
 			},
@@ -83,26 +79,29 @@ func createHttpRequest(uri string, image *repo.Image, imageName string) (*http.R
 }
 
 func listImages() error {
-	res, err := http.Get("http://localhost:6000/list")
+	resp, err := http.Get("http://localhost:6000/list")
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 
-	io.Copy(os.Stdout, res.Body)
+	io.Copy(os.Stdout, resp.Body)
 	return nil
 }
 
 func syncImages() error {
-	res, err := http.Get("http://localhost:6000/sync")
+	resp, err := http.Get("http://localhost:6000/sync")
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 
-	io.Copy(os.Stdout, res.Body)
+	io.Copy(os.Stdout, resp.Body)
 	return nil
 }
 
 func addImage(imageName string) error {
+	// get image meta data
 	client, err := docker.NewClientWithOpts(docker.FromEnv, docker.WithAPIVersionNegotiation())
 	if err != nil {
 		log.Fatal(err)
@@ -124,8 +123,6 @@ func addImage(imageName string) error {
 	}
 
 	image := repo.NewImage(buf.Bytes(), img)
-
-	log.Print(image.Meta)
 
 	_, err = createHttpRequest("http://localhost:6000/add", image, imageName)
 
