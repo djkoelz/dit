@@ -23,12 +23,12 @@ func NewService(store *Store) *Service {
 }
 
 func (this *Service) AddImage(w http.ResponseWriter, r *http.Request) {
-	// var u User
 	var image Image
 	if r.Body == nil {
 		http.Error(w, "Please send a request body", 400)
 		return
 	}
+
 	err := json.NewDecoder(r.Body).Decode(&image)
 	if err != nil {
 		http.Error(w, err.Error(), 400)
@@ -42,7 +42,6 @@ func (this *Service) AddImage(w http.ResponseWriter, r *http.Request) {
 
 func (this *Service) ListImages(w http.ResponseWriter, r *http.Request) {
 	io.WriteString(w, this.store.CreateImagesString())
-	w.WriteHeader(http.StatusOK)
 }
 
 func (this *Service) RemoveImage(w http.ResponseWriter, r *http.Request) {

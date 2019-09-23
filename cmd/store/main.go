@@ -24,27 +24,25 @@ func main() {
 			Usage:   "Add an image to the store",
 			Action: func(c *cli.Context) error {
 				imageName := c.Args().First()
-				addImage(imageName)
-				return nil
+				return addImage(imageName)
 			},
 		},
-		{
-			Name:    "remove",
-			Aliases: []string{"r"},
-			Usage:   "Remove an image from the store",
-			Action: func(c *cli.Context) error {
-				imageName := c.Args().First()
-				removeImage(imageName)
-				return nil
-			},
-		},
+		// {
+		// 	Name:    "remove",
+		// 	Aliases: []string{"r"},
+		// 	Usage:   "Remove an image from the store",
+		// 	Action: func(c *cli.Context) error {
+		// 		imageName := c.Args().First()
+		// 		removeImage(imageName)
+		// 		return nil
+		// 	},
+		// },
 		{
 			Name:    "list",
 			Aliases: []string{"l"},
 			Usage:   "List all images in the store",
 			Action: func(c *cli.Context) error {
-				listImages()
-				return nil
+				return listImages()
 			},
 		},
 		{
@@ -52,8 +50,7 @@ func main() {
 			Aliases: []string{"l"},
 			Usage:   "Sync all images in the store with active ecr",
 			Action: func(c *cli.Context) error {
-				syncImages()
-				return nil
+				return syncImages()
 			},
 		},
 	}
@@ -62,20 +59,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-}
-
-func createHttpRequest(uri string, image *repo.Image, imageName string) (*http.Request, error) {
-	b := new(bytes.Buffer)
-	decoder := json.NewEncoder(b)
-	err := decoder.Encode(image)
-	if err != nil {
-		log.Print(err)
-	}
-
-	res, _ := http.Post(uri, "application/json; charset=utf-8", b)
-	io.Copy(os.Stdout, res.Body)
-
-	return nil, nil
 }
 
 func listImages() error {
@@ -98,6 +81,23 @@ func syncImages() error {
 
 	io.Copy(os.Stdout, resp.Body)
 	return nil
+}
+
+func createHttpRequest(uri string, image *repo.Image, imageName string) (*http.Request, error) {
+	b := new(bytes.Buffer)
+	err := json.NewEncoder(b).Encode(image)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Print(b)
+	res, err := http.Post(uri, "application/json; charset=utf-8", b)
+	if err != nil {
+		return nil, err
+	}
+	io.Copy(os.Stdout, res.Body)
+
+	return nil, nil
 }
 
 func addImage(imageName string) error {
@@ -129,18 +129,18 @@ func addImage(imageName string) error {
 	return err
 }
 
-func removeImage(imageName string) error {
-	client, err := docker.NewClientWithOpts(docker.FromEnv, docker.WithAPIVersionNegotiation())
-	if err != nil {
-		log.Fatal(err)
-	}
+// func removeImage(imageName string) error {
+// 	client, err := docker.NewClientWithOpts(docker.FromEnv, docker.WithAPIVersionNegotiation())
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
 
-	img, buffer, err := client.ImageInspectWithRaw(context.Background(), imageName)
-	image := repo.NewImage(buffer, img)
+// 	img, buffer, err := client.ImageInspectWithRaw(context.Background(), imageName)
+// 	image := repo.NewImage(buffer, img)
 
-	log.Print(image.Meta)
+// 	log.Print(image.Meta)
 
-	_, err = createHttpRequest("http://localhost:6000/remove", image, imageName)
+// 	_, err = createHttpRequest("http://localhost:6000/remove", image, imageName)
 
-	return err
-}
+// 	return err
+// }
