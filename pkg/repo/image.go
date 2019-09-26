@@ -6,15 +6,22 @@ import (
 
 type Image struct {
 	Dockerfile string
-	Data       []byte
 	Meta       types.ImageInspect
 }
 
-func NewImage(data []byte, meta types.ImageInspect) *Image {
+func NewImage(meta types.ImageInspect) *Image {
 	image := new(Image)
 	image.Dockerfile = ""
-	image.Data = data
 	image.Meta = meta
 
 	return image
 }
+
+// func (this *Image) GetImageLayerFiles() []string {
+// 	client, err := docker.NewClientWithOpts(docker.FromEnv, docker.WithAPIVersionNegotiation())
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+
+// 	inspection, _, err := client.ImageInspectWithRaw(context.Background(), )
+// }

@@ -1,13 +1,13 @@
 package repo
 
 import (
-	"bytes"
+	//"bytes"
 	"context"
 	"github.com/docker/docker/api/types"
 	docker "github.com/docker/docker/client"
-	"io"
+	//"io"
 	"log"
-	"os"
+	//"os"
 )
 
 type Store struct {
@@ -26,19 +26,19 @@ func NewStore(registry string) *Store {
 func (this *Store) AddImage(image *Image) {
 	this.images[image.Meta.ID] = image
 
-	client, err := docker.NewClientWithOpts(docker.FromEnv, docker.WithAPIVersionNegotiation())
-	if err != nil {
-		log.Print(err)
-	}
+	// client, err := docker.NewClientWithOpts(docker.FromEnv, docker.WithAPIVersionNegotiation())
+	// if err != nil {
+	// 	log.Print(err)
+	// }
 
-	r := bytes.NewReader(image.Data)
-	resp, err := client.ImageLoad(context.Background(), r, true)
-	defer resp.Body.Close()
-	if err != nil {
-		log.Print(err)
-	} else {
-		io.Copy(os.Stdout, resp.Body)
-	}
+	// r := bytes.NewReader(image.Data)
+	// resp, err := client.ImageLoad(context.Background(), r, true)
+	// defer resp.Body.Close()
+	// if err != nil {
+	// 	log.Print(err)
+	// } else {
+	// 	io.Copy(os.Stdout, resp.Body)
+	// }
 }
 
 func (this *Store) RemoveImage(id string) {
