@@ -3,24 +3,24 @@ package main
 import (
 	"archive/tar"
 	"bytes"
-	"errors"
-	"fmt"
+	"context"
 	"github.com/djkoelz/dit/pkg/repo"
 	"github.com/djkoelz/dit/pkg/router"
+	docker "github.com/docker/docker/client"
 	"io"
 	"io/ioutil"
 	"log"
 	"mime"
 	"mime/multipart"
 	"net/http"
-	"os"
 	"strings"
 )
 
-var buf bytes.Buffer
-var tw = tar.NewWriter(&buf)
+var buf = new(bytes.Buffer)
+var tw = tar.NewWriter(buf)
 
 func test(w http.ResponseWriter, r *http.Request) {
+
 	mediaType, params, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
 	if err != nil {
 		log.Print(err)
@@ -64,18 +64,39 @@ func test(w http.ResponseWriter, r *http.Request) {
 }
 
 func sync(w http.ResponseWriter, r *http.Request) {
-	// Open and iterate through the files in the archive.
-	tw.Close()
-	tarballFilePath := "file.tar"
-	file, err := os.Create(tarballFilePath)
+	log.Print("Syncing file")
+
+	client, err := docker.NewClientWithOpts(docker.FromEnv, docker.WithAPIVersionNegotiation())
 	if err != nil {
-		log.Fatal(errors.New(fmt.Sprintf("Could not create tarball file '%s', got error '%s'", tarballFilePath, err.Error())))
+		log.Fatal(err)
 	}
-	defer file.Close()
 
-	io.Copy(file, &buf)
+	tw.Close()
+	response, err := client.ImageLoad(context.Background(), buf, false)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer response.Body.Close()
 
-	log.Print("Done")
+	bodyBytes, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	bodyString := string(bodyBytes)
+	log.Print(bodyString)
+
+	// Open and iterate through the files in the archive.
+	// tarballFilePath := "file.tar"
+	// file, err := os.Create(tarballFilePath)
+	// if err != nil {
+	// 	log.Fatal(errors.New(fmt.Sprintf("Could not create tarball file '%s', got error '%s'", tarballFilePath, err.Error())))
+	// }
+	// defer file.Close()
+
+	// io.Copy(file, &buf)
+
+	// log.Print("Done")
+
 	// tr := tar.NewReader(&buf)
 	// for {
 	// 	hdr, err := tr.Next()
@@ -99,6 +120,7 @@ func main() {
 
 	router := router.NewRouter()
 	router.Register("/add", test)
+	//router.Register("/add", sevice.AddImage)
 	router.Register("/get", service.GetImage)
 	router.Register("/remove", service.RemoveImage)
 	router.Register("/list", service.ListImages)

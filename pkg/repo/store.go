@@ -1,13 +1,10 @@
 package repo
 
 import (
-	//"bytes"
 	"context"
 	"github.com/docker/docker/api/types"
 	docker "github.com/docker/docker/client"
-	//"io"
 	"log"
-	//"os"
 )
 
 type Store struct {

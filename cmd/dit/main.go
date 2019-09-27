@@ -5,7 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	//"fmt"
+	"github.com/cheggaaa/pb/v3"
 	"github.com/djkoelz/dit/pkg/repo"
 	docker "github.com/docker/docker/client"
 	dockerF "github.com/fsouza/go-dockerclient"
@@ -16,7 +16,6 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
-	//"path/filepath"
 )
 
 func main() {
@@ -169,9 +168,13 @@ func createTarFiles(layers map[string][]LayerFile) (map[string]*bytes.Buffer, er
 	return tars, nil
 }
 
-func transmitLayers(reader *tar.Reader) map[string][]LayerFile {
+func transmitLayers(reader *tar.Reader, size int) map[string][]LayerFile {
 	layers := make(map[string][]LayerFile)
 
+	bar := pb.Start64(3000000)
+	bar.Start()
+
+	// for each layer transmit
 	for {
 		hdr, err := reader.Next()
 		if err == io.EOF {
@@ -187,16 +190,21 @@ func transmitLayers(reader *tar.Reader) map[string][]LayerFile {
 		go func() {
 			defer w.Close()
 			defer m.Close()
+
 			part, err := m.CreateFormFile("file", hdr.Name)
 			if err != nil {
 				log.Fatal(err)
 			}
 
-			if _, err = io.Copy(part, reader); err != nil {
+			written, err := io.Copy(part, reader)
+			if err != nil {
 				log.Fatal(err)
 			}
+
+			bar.Add64(written)
 		}()
 
+		bar.Finish()
 		request, err := http.NewRequest("POST", "http://localhost:6000/add", r)
 		if err != nil {
 			log.Fatal(err)
@@ -208,38 +216,9 @@ func transmitLayers(reader *tar.Reader) map[string][]LayerFile {
 			log.Fatal(err)
 		}
 
-		// dir := filepath.Dir(hdr.Name)
-		// bs, _ := ioutil.ReadAll(reader)
-		// layers[dir] = append(layers[dir], LayerFile{hdr.Name, bs})
 	}
 
 	return layers
-}
-
-func createTransmitTarRequest(name string, buf *bytes.Buffer) (*http.Request, error) {
-	r, w := io.Pipe()
-	m := multipart.NewWriter(w)
-	go func() {
-		defer w.Close()
-		defer m.Close()
-
-		part, err := m.CreateFormFile("file", name)
-		if err != nil {
-			return
-		}
-
-		if _, err = io.Copy(part, buf); err != nil {
-			return
-		}
-	}()
-
-	request, err := http.NewRequest("POST", "http://localhost:6000/add", r)
-	if err != nil {
-		return nil, err
-	}
-	request.Header.Add("Content-Type", m.FormDataContentType())
-
-	return request, nil
 }
 
 func saveImage(imageName string) error {
@@ -254,42 +233,16 @@ func saveImage(imageName string) error {
 	defer response.Close()
 
 	// create layers from tar
-	transmitLayers(tar.NewReader(response))
+	transmitLayers(tar.NewReader(response), 1000)
 
-	// create tars for each layer
-	// tars, err := createTarFiles(layers)
-	// if err != nil {
-	// 	log.Print(err)
-	// }
+	// send sync command
+	resp, err := http.Get("http://localhost:6000/sync")
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
 
-	// messages := make(chan *http.Response, len(tars))
-	// for k, t := range tars {
-	// 	log.Print("Creating Request for: ", k)
-	// 	request, err := createTransmitTarRequest(k, t)
-	// 	if err != nil {
-	// 		log.Print(err)
-	// 	}
-
-	// 	go func() {
-	// 		httpClient := &http.Client{}
-	// 		resp, err := httpClient.Do(request)
-	// 		if err != nil {
-	// 			log.Fatal(err)
-	// 		}
-
-	// 		messages <- resp
-	// 	}()
-	// }
-
-	// // block until everything sent
-	// for i := 0; i < len(tars); i++ {
-	// 	resp := <-messages
-	// 	var bodyContent []byte
-	// 	resp.Body.Read(bodyContent)
-	// 	resp.Body.Close()
-
-	// 	fmt.Println(resp.Header, bodyContent)
-	// }
+	// io.Copy(os.Stdout, resp.Body)
 
 	return nil
 }
